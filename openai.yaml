@@ -1,0 +1,322 @@
+openapi: 3.0.3
+info:
+  title: Teeinblue Print Partner API
+  description: |
+    Minimal REST API for print partners to sync catalogs and submit orders to Teeinblue.
+    Endpoints:
+      - GET /catalogs (list)
+      - GET /catalogs/{id} (detail)
+      - POST /orders (create order)
+  version: 1.0.0
+
+servers:
+  - url: https://example.com/v1
+    description: Base URL
+
+# All endpoints require: Authorization: Bearer <token>
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Catalogs
+    description: Endpoints for listing and retrieving catalogs
+  - name: Orders
+    description: Submit and manage orders
+
+paths:
+  /catalogs:
+    get:
+      tags: [Catalogs]
+      summary: List catalogs
+      description: Returns a paginated list of catalogs.
+      operationId: listCatalogs
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: per_page
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: search
+          schema: { type: string }
+          description: Search by catalog name.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/CatalogListItem' }
+                  meta: { $ref: '#/components/schemas/Meta' }
+              example:
+                data:
+                  - id: 7
+                    name: Unisex Standard T-Shirt
+                    mockups:
+                      - url: "https://example.com/original.jpg"
+                meta: { page: 1, per_page: 50, total: 1234 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /catalogs/{id}:
+    get:
+      tags: [Catalogs]
+      summary: Catalog detail
+      description: Returns full catalog details for a given ID.
+      operationId: getCatalog
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Catalog' }
+              example:
+                id: 7
+                name: Unisex Standard T-Shirt
+                description: "<p>HTML description...</p>"
+                mockups:
+                  - url: "https://example.com/original.jpg"
+                print_areas:
+                  - { name: front, width: 4050, height: 4650, dpi: 300 }
+                  - { name: back,  width: 4050, height: 4650, dpi: 300 }
+                variants:
+                  - { variant_sku: 1, size: S, color: Black, base_cost: "6.99", availability: in_stock, weight: null }
+                  - { variant_sku: 2, size: S, color: Safety Pink, base_cost: "6.99", availability: in_stock,    weight: null }
+                  - { variant_sku: 3, size: 5XL, color: Ice Grey,  base_cost: "12.49", availability: out_of_stock, weight: null }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /orders:
+    post:
+      tags: [Orders]
+      summary: Create order
+      description: This API endpoint creates an order and returns it.
+      operationId: createOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [shipping_address, line_items, shipment_notification_url]
+              properties:
+                reference_order_id:
+                  type: string
+                  description: External order id in your system.
+                  example: "#1001"
+                test_order:
+                  type: boolean
+                  description: Flag to create a test order (no production fulfillment).
+                  example: false
+                shipment_notification_url:
+                  type: string
+                  description: A webhook callback URL for shipment updates. If provided, the print provider will send an HTTP POST request to this URL when the order ships, including tracking details (e.g. tracking number, tracking url, tracking company). This allows your system to automatically receive delivery updates without polling the API.
+                  example: "https://api.teeinblue.com/api/webhook/print-provider?order-token=7d1e0f01ff56119101046f4f27a88412"
+                shipping_address:
+                  type: object
+                  description: Shipping address
+                  required: [first_name, last_name, address1, city, state, zip, country, country_code]
+                  properties:
+                    zip:        { type: string, description: Postal/ZIP code., example: "60089" }
+                    city:       { type: string, example: "Buffalo Grove" }
+                    phone:      { type: string }
+                    company:    { type: string }
+                    country:    { type: string, example: "France" }
+                    address1:   { type: string, description: Primary street line., example: "1999 Rue Lucie Aubrac" }
+                    address2:   { type: string, nullable: true, description: Secondary address line., example: null }
+                    province:      { type: string, description: State/Province. }
+                    first_name: { type: string, example: "John" }
+                    last_name:  { type: string, example: "Carry" }
+                    country_code: { type: string, example: "FR" }
+                    province_code: { type: string}
+                    
+                line_items:
+                  type: array
+                  description: List of items to fulfill.
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [quantity, variant_sku]
+                    properties:
+                      quantity:    { type: integer, example: 1 }
+                      variant_sku: { type: string, description: Partner SKU to fulfill., example: "2342" }
+                      print_areas:
+                        type: array
+                        description: Artwork per print area.
+                        minItems: 1
+                        items:
+                          type: object
+                          required: [key, url]
+                          properties:
+                            key: { type: string, description: Print area key., example: "front" }
+                            url: { type: string, format: uri, description: Public URL to the artwork., example: "https://cdn.teeinblue.com/designs/467f0119-2e8d-4bc8-be90-fd80cbb49f08/467f0119-2e8d-4bc8-be90-fd80cbb49f08-272489.png" }
+            example:
+              reference_order_id: "#1001"
+              test_order: false
+              shipment_notification_url: https://api.teeinblue.com/api/webhook/print-provider?order-token=7d1e0f01ff56119101046f4f27a88412
+              shipping_address:
+                zip: "60089"
+                city: "Buffalo Grove"
+                phone: "0123456789"
+                company: null
+                country: "France"
+                address1: "999 Rue Lucie Aubrac"
+                address2: null
+                province: null
+                last_name: "John"
+                first_name: "Carry"
+                country_code: "FR"
+                province_code: null
+              line_items:
+                - quantity: 1
+                  print_areas:
+                    - { key: "front",  url: "https://front-design.png" }
+                    - { key: "back",   url: "https://back-design.png" }
+                  variant_sku: "2342"
+                - quantity: 1
+                  print_areas:
+                    - { key: "default", url: "https://default-design.png" }
+                  variant_sku: "2342"
+      responses:
+        '201':
+          description: Order created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:           { type: string, example: "ord_123456" }
+                  status:       { type: string, example: "created" }
+                  reference_order_id: { type: string, example: "#1001" }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { description: Unprocessable Entity (validation error) }
+      
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: <token>   # optional, adjust as needed
+
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example:
+            error:
+              code: invalid_parameter
+              message: per_page must be <= 100
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example:
+            error:
+              code: unauthorized
+              message: Missing or invalid token
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example:
+            error:
+              code: not_found
+              message: Resource not found
+
+  schemas:
+    Meta:
+      type: object
+      properties:
+        page:     { type: integer }
+        per_page: { type: integer }
+        total:    { type: integer }
+      required: [page, per_page, total]
+
+    Mockup:
+      type: object
+      properties:
+        url:  { type: string, format: uri }
+      required: [url]
+
+    PrintArea:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the print area
+          example: front, back, sleeve, hood...
+        width:  { type: integer }
+        height: { type: integer }
+        dpi:
+          type: integer
+          example: 300
+      required: [name, width, height]
+
+    Variant:
+      type: object
+      properties:
+        variant_sku: { type: string }
+        size:        { type: string }
+        color:       { type: string }
+        color_hex:   { type: string }
+        base_cost:   { type: number }
+        availability:
+          type: string
+          enum: [in_stock, out_of_stock]
+        weight:      { type: number, nullable: true }
+      required: [variant_sku, size, color, base_cost, availability]
+
+    CatalogListItem:
+      type: object
+      properties:
+        id:           { type: integer }
+        name:         { type: string }
+        mockups:
+          type: array
+          items: { $ref: '#/components/schemas/Mockup' }
+      required: [id, name]
+
+    Catalog:
+      type: object
+      properties:
+        id:           { type: integer }
+        name:         { type: string }
+        description:  { type: string }
+        mockups:
+          type: array
+          items: { $ref: '#/components/schemas/Mockup' }
+        print_areas:
+          type: array
+          items: { $ref: '#/components/schemas/PrintArea' }
+        variants:
+          type: array
+          items: { $ref: '#/components/schemas/Variant' }
+      required: [id, name, mockups, print_areas, variants]
+
+    ErrorEnvelope:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:       { type: string }
+            message:    { type: string }
+            details:    { type: object, additionalProperties: true }
+          required: [code, message]
+      required: [error]
+
