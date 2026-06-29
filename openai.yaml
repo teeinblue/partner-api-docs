@@ -68,6 +68,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Catalog"
+              example: {"id":7777,"name":"Sublimated Sherpa Blanket","description":"A high-quality sublimated sherpa blanket","mockups":[{"name":"original","url":"https://cdn.teeinblue.com/mockups/467f0119-2e8d-4bc8-be90-fd80cbb49f08-original.jpg","mockup_layers":[{"width":4050,"height":4650,"top":1000,"left":800,"position":"frontshine","url":"https://cdn.teeinblue.com/designs/467f0119-2e8d-4bc8-be90-fd80cbb49f08/467f0119-2e8d-4bc8-be90-fd80cbb49f08-front-mask.png","mask":{"url":"https://cdn.teeinblue.com/designs/467f0119-2e8d-4bc8-be90-fd80cbb49f08/467f0119-2e8d-4bc8-be90-fd80cbb49f08-front-mask.png","width":4050,"height":4650,"top":1000,"left":800},"perspective":{"top_left":{"x":100,"y":200},"top_right":{"x":100,"y":200},"bottom_left":{"x":100,"y":200},"bottom_right":{"x":100,"y":200}}}]}],"print_areas":[{"name":"front","display_name":"Front","width":4050,"height":3000,"dpi":300}],"variants":[{"variant_sku":"2342","size":"M","color":"Black","color_hex":"#000000","base_cost":19.99,"availability":"in_stock","weight":200,"printareas_info":[{"name":"front","display_name":"Front","width":4050,"height":3000,"dpi":300}]}]}
         "404":
           $ref: "#/components/responses/NotFound"
         "401":
@@ -306,13 +307,26 @@ components:
           description: Mockup image URL. This should be a high-resolution image that can be used for generating design previews in the design tool.
           example: "https://cdn.teeinblue.com/mockups/467f0119-2e8d-4bc8-be90-fd80cbb49f08-original.jpg"
           format: uri
-        mockup_printareas:
+        mockup_layers:
           type: array
-          description: Printareas available for this mockup
+          description: Layers available for this mockup. A layer can be either a print area or an image.
           items:
-            $ref: "#/components/schemas/MockupPrintarea"
+            $ref: "#/components/schemas/MockupLayer"
 
       required: [url]
+
+    Point:
+      type: object
+      properties:
+        x:
+          type: integer
+          description: X coordinate of the point
+          example: 100
+        y:
+          type: integer
+          description: Y coordinate of the point
+          example: 200
+      required: [x, y]
 
     PrintArea:
       type: object
@@ -427,54 +441,83 @@ components:
             $ref: "#/components/schemas/Variant"
       required: [id, name, mockups, print_areas, variants]
 
-    MockupPrintarea:
+    MockupLayer:
       type: object
       properties:
-        perspective_enable:
-          type: boolean
-          description: Whether this print area supports perspective preview in the design tool.
-          example: true
         width:
           type: integer
-          description: Width of the print area on this mockup (in pixels)
+          description: Width of the mockup layer (in pixels). If the layer is a print area, this should be the width of the print area.
           example: 4050
         height:
           type: integer
-          description: Height of the print area on this mockup (in pixels)
+          description: Height of the mockup layer (in pixels). If the layer is a print area, this should be the height of the print area.
           example: 4650
         top:
           type: integer
-          description: Distance from the top edge of the mockup to the top edge of the print area (in pixels)
+          description: Distance from the top edge of the mockup to the top edge of the layer (in pixels)
           example: 1000
         left:
           type: integer
-          description: Distance from the left edge of the mockup to the left edge of the print area (in pixels)
+          description: Distance from the left edge of the mockup to the left edge of the layer (in pixels)
           example: 800
-        position:
-          type: string
-          description: |
-            Position of the print area on the mockup. Possible values: front, back, sleeve, hood...
-          example: frontshine
         url:
           type: string
           format: uri
-          description: Mask URL for this print area on this mockup. The design tool uses this mask to show the artwork in the correct shape and position on the mockup.
+          description: URL for this layer on this mockup. Only applicable for image layers. The design tool uses this image to show the layer on the mockup.
           example: "https://cdn.teeinblue.com/designs/467f0119-2e8d-4bc8-be90-fd80cbb49f08/467f0119-2e8d-4bc8-be90-fd80cbb49f08-front-mask.png"
-        printarea_info:
+        mask:
           type: object
+          description: Mask for this layer on this mockup. Only applicable for print area layers. The design tool uses this mask to show the layer in the correct shape and position on the mockup.
           properties:
+            url:
+              type: string
+              format: uri
+              description: Mask image URL for this print area on this mockup. The design tool uses this mask to show the artwork in the correct shape and position on the mockup.
+              example: "https://cdn.teeinblue.com/designs/467f0119-2e8d-4bc8-be90-fd80cbb49f08/467f0119-2e8d-4bc8-be90-fd80cbb49f08-front-mask.png"
             width:
               type: integer
-              description: Width of the print area
+              description: Width of the masked print area on this mockup (in pixels).
               example: 4050
             height:
               type: integer
-              description: Height of the print area
+              description: Height of the masked print area on this mockup (in pixels).
               example: 4650
-            dpi:
+            top:
               type: integer
-              description: DPI (dots per inch) of the print area, used to calculate the required resolution for artwork.
-              example: 300
+              description: Distance from the top edge of the mockup to the top edge of the masked print area (in pixels).
+              example: 1000
+            left:
+              type: integer
+              description: Distance from the left edge of the mockup to the left edge of the masked print area (in pixels).
+              example: 800
+        perspective:
+          type: object
+          description: Perspective transformation for this layer on this mockup. Only applicable for print area layers. The design tool uses this information to transform the artwork to fit the perspective of the mockup.
+          properties:
+            top_left:
+              $ref: '#/components/schemas/Point'
+              description: Top-left corner of the print area on this mockup.
+              example: 
+                x: 100
+                y: 200
+            top_right:
+              $ref: '#/components/schemas/Point'
+              description: Top-right corner of the print area on this mockup.
+              example: 
+                x: 500
+                y: 200
+            bottom_left:
+              $ref: '#/components/schemas/Point'
+              description: Bottom-left corner of the print area on this mockup.
+              example: 
+                x: 100
+                y: 700
+            bottom_right:
+              $ref: '#/components/schemas/Point'
+              description: Bottom-right corner of the print area on this mockup.
+              example: 
+                x: 500
+                y: 700
       required: [width, height, top, left, position]
 
     ErrorEnvelope:
