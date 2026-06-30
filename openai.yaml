@@ -68,7 +68,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Catalog"
-              example: {"id":7777,"name":"Sublimated Sherpa Blanket","description":"A high-quality sublimated sherpa blanket","mockups":[{"name":"original","url":"https://cdn.teeinblue.com/mockups/467f0119-2e8d-4bc8-be90-fd80cbb49f08-original.jpg","mockup_layers":[{"width":4050,"height":4650,"top":1000,"left":800,"position":"frontshine","url":"https://cdn.teeinblue.com/designs/467f0119-2e8d-4bc8-be90-fd80cbb49f08/467f0119-2e8d-4bc8-be90-fd80cbb49f08-front-mask.png","mask":{"url":"https://cdn.teeinblue.com/designs/467f0119-2e8d-4bc8-be90-fd80cbb49f08/467f0119-2e8d-4bc8-be90-fd80cbb49f08-front-mask.png","width":4050,"height":4650,"top":1000,"left":800},"perspective":{"top_left":{"x":100,"y":200},"top_right":{"x":100,"y":200},"bottom_left":{"x":100,"y":200},"bottom_right":{"x":100,"y":200}}}]}],"print_areas":[{"name":"front","display_name":"Front","width":4050,"height":3000,"dpi":300}],"variants":[{"variant_sku":"2342","size":"M","color":"Black","color_hex":"#000000","base_cost":19.99,"availability":"in_stock","weight":200,"printareas_info":[{"name":"front","display_name":"Front","width":4050,"height":3000,"dpi":300}]}]}
+              example: {"id":8,"name":"Example product","description":"Example product","mockups":[{"name":"Mockup 1","url":"https://example.com/layer-main.png","width":1000,"height":1000,"mockup_layers":[{"url":"https://example.com/layer-background.png"},{"perspective":{"top_left":{"x":145,"y":61},"top_right":{"x":849,"y":56},"bottom_left":{"x":146,"y":726},"bottom_right":{"x":844,"y":729}},"printarea_info":{"name":"front","width":3280,"height":3115}},{"url":"https://example.com/layer-main.png"}]},{"name":"Mockup 2","url":"https://example.com/layer-main.png","width":960,"height":960,"mockup_layers":[{"url":"https://example.com/layer-main.png"},{"top":356,"left":215,"width":554,"height":248,"mask":{"top":0,"left":0,"width":261,"height":248},"printarea_info":{"name":"back","width":2480,"height":1110}},{"top":356,"left":194,"width":552,"height":247,"mask":{"top":0,"left":284,"width":265,"height":247},"printarea_info":{"name":"back","width":2480,"height":1110}}]}],"print_areas":[{"name":"front","display_name":"Front","width":3280,"height":3115,"dpi":300},{"name":"back","display_name":"Back","width":2480,"height":1110,"dpi":300}],"variants":[{"variant_sku":"black-wood-1","size":"Wood LED Base with Cord","color":"Default","color_hex":"#000000","base_cost":19.99,"availability":"in_stock","weight":200,"printareas_info":[{"name":"back","display_name":"Back","width":2480,"height":1110,"dpi":300}]}]}
         "404":
           $ref: "#/components/responses/NotFound"
         "401":
@@ -341,15 +341,15 @@ components:
           example: Front
         width:
           type: integer
-          description: Width of the print area
+          description: Width of the print area (in pixels)
           example: 4050
         height:
           type: integer
-          description: Height of the print area
+          description: Height of the print area (in pixels)
           example: 3000
         dpi:
           type: integer
-          description: DPI (dots per inch) of the print area, used to calculate the required resolution for artwork.
+          description: DPI (dots per inch) of the print area.
           example: 300
       required: [name, width, height]
 
@@ -446,11 +446,11 @@ components:
       properties:
         width:
           type: integer
-          description: Width of the mockup layer (in pixels). If the layer is a print area, this should be the width of the print area.
+          description: Width of the mockup layer (in pixels). Required if mask is enabled (find out more at [Mockup of Product Base](https://support.teeinblue.com/en/article/mockup-of-product-base-1h4qyj1/)).
           example: 4050
         height:
           type: integer
-          description: Height of the mockup layer (in pixels). If the layer is a print area, this should be the height of the print area.
+          description: Height of the mockup layer (in pixels). Required if mask is enabled (find out more at [Mockup of Product Base](https://support.teeinblue.com/en/article/mockup-of-product-base-1h4qyj1/)).
           example: 4650
         top:
           type: integer
@@ -467,7 +467,7 @@ components:
           example: "https://cdn.teeinblue.com/designs/467f0119-2e8d-4bc8-be90-fd80cbb49f08/467f0119-2e8d-4bc8-be90-fd80cbb49f08-front-mask.png"
         mask:
           type: object
-          description: Mask for this layer on this mockup. Only applicable for print area layers. The design tool uses this mask to show the layer in the correct shape and position on the mockup.
+          description: Mask for this layer on this mockup, used when you want to show only some parts of a printarea. Only applicable for print area layers. The design tool uses this mask to show the layer in the correct shape and position on the mockup. Find out more at [Mockup of Product Base](https://support.teeinblue.com/en/article/mockup-of-product-base-1h4qyj1/).
           properties:
             url:
               type: string
@@ -492,7 +492,7 @@ components:
               example: 800
         perspective:
           type: object
-          description: Perspective transformation for this layer on this mockup. Only applicable for print area layers. The design tool uses this information to transform the artwork to fit the perspective of the mockup.
+          description: Perspective transformation for this layer on this mockup, used when you want to show only some parts of a printarea. Only applicable for print area layers. The design tool uses this information to transform the artwork to fit the perspective of the mockup. Find out more at [Mockup of Product Base](https://support.teeinblue.com/en/article/mockup-of-product-base-1h4qyj1/).
           properties:
             top_left:
               $ref: '#/components/schemas/Point'
@@ -518,7 +518,22 @@ components:
               example: 
                 x: 500
                 y: 700
-      required: [width, height, top, left, position]
+        printarea_info:
+          type: object
+          description: Printarea information for this layer on this mockup. Only applicable for print area layers.
+          properties:
+            name:
+              type: string
+              description: Name of the print area.
+              example: front
+            width:
+              type: integer
+              description: Width of the print area (in pixels).
+              example: 4050
+            height:
+              type: integer
+              description: Height of the print area (in pixels).
+              example: 4650
 
     ErrorEnvelope:
       type: object
