@@ -31,18 +31,11 @@ paths:
       description: Returns a paginated list of catalogs.
       operationId: listCatalogs
       parameters:
-        - in: query
-          name: page
-          schema: { type: integer, default: 1 }
-        - in: query
-          name: per_page
-          schema: { type: integer, default: 50 }
-        - in: query
-          name: search
-          schema: { type: string }
-          description: Search by catalog name.
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
+        - $ref: "#/components/parameters/search"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
@@ -51,17 +44,14 @@ paths:
                 properties:
                   data:
                     type: array
-                    items: { $ref: '#/components/schemas/CatalogListItem' }
-                  meta: { $ref: '#/components/schemas/Meta' }
-              example:
-                data:
-                  - id: 7
-                    name: Unisex Standard T-Shirt
-                    mockups:
-                      - url: "https://example.com/original.jpg"
-                meta: { page: 1, per_page: 50, total: 1234 }
-        '400': { $ref: '#/components/responses/BadRequest' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
+                    items:
+                      $ref: "#/components/schemas/CatalogListItem"
+                  meta:
+                    $ref: "#/components/schemas/Meta"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   /catalogs/{id}:
     get:
@@ -70,31 +60,19 @@ paths:
       description: Returns full catalog details for a given ID.
       operationId: getCatalog
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: integer }
+        - $ref: "#/components/parameters/id"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Catalog' }
-              example:
-                id: 7
-                name: Unisex Standard T-Shirt
-                description: "<p>HTML description...</p>"
-                mockups:
-                  - url: "https://example.com/original.jpg"
-                print_areas:
-                  - { name: front, width: 4050, height: 4650, dpi: 300 }
-                  - { name: back,  width: 4050, height: 4650, dpi: 300 }
-                variants:
-                  - { variant_sku: 1, size: S, color: Black, base_cost: "6.99", availability: in_stock, weight: null }
-                  - { variant_sku: 2, size: S, color: Safety Pink, base_cost: "6.99", availability: in_stock,    weight: null }
-                  - { variant_sku: 3, size: 5XL, color: Ice Grey,  base_cost: "12.49", availability: out_of_stock, weight: null }
-        '404': { $ref: '#/components/responses/NotFound' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
+              schema:
+                $ref: "#/components/schemas/Catalog"
+              example: {"id":8,"name":"Example product","description":"Example product","mockups":[{"name":"Mockup 1","url":"https://example.com/layer-main.png","width":1000,"height":1000,"mockup_layers":[{"url":"https://example.com/layer-background.png"},{"perspective":{"top_left":{"x":145,"y":61},"top_right":{"x":849,"y":56},"bottom_left":{"x":146,"y":726},"bottom_right":{"x":844,"y":729}},"printarea_info":{"name":"front","width":3280,"height":3115}},{"url":"https://example.com/layer-main.png"}]},{"name":"Mockup 2","url":"https://example.com/layer-main.png","width":960,"height":960,"mockup_layers":[{"url":"https://example.com/layer-main.png"},{"top":356,"left":215,"width":554,"height":248,"mask":{"top":0,"left":0,"width":261,"height":248},"printarea_info":{"name":"back","width":2480,"height":1110}},{"top":356,"left":194,"width":552,"height":247,"mask":{"top":0,"left":284,"width":265,"height":247},"printarea_info":{"name":"back","width":2480,"height":1110}}]}],"print_areas":[{"name":"front","display_name":"Front","width":3280,"height":3115,"dpi":300},{"name":"back","display_name":"Back","width":2480,"height":1110,"dpi":300}],"variants":[{"variant_sku":"black-wood-1","size":"Wood LED Base with Cord","color":"Default","color_hex":"#000000","base_cost":19.99,"availability":"in_stock","weight":200,"printareas_info":[{"name":"back","display_name":"Back","width":2480,"height":1110,"dpi":300}]}]}
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   /orders:
     post:
@@ -108,7 +86,8 @@ paths:
           application/json:
             schema:
               type: object
-              required: [shipping_address, line_items, shipment_notification_url]
+              required:
+                [shipping_address, line_items, shipment_notification_url]
               properties:
                 reference_order_id:
                   type: string
@@ -125,21 +104,56 @@ paths:
                 shipping_address:
                   type: object
                   description: Shipping address
-                  required: [first_name, last_name, address1, city, state, zip, country, country_code]
+                  required:
+                    [
+                      first_name,
+                      last_name,
+                      address1,
+                      city,
+                      state,
+                      zip,
+                      country,
+                      country_code,
+                    ]
                   properties:
-                    zip:        { type: string, description: Postal/ZIP code., example: "60089" }
-                    city:       { type: string, example: "Buffalo Grove" }
-                    phone:      { type: string }
-                    company:    { type: string }
-                    country:    { type: string, example: "France" }
-                    address1:   { type: string, description: Primary street line., example: "1999 Rue Lucie Aubrac" }
-                    address2:   { type: string, nullable: true, description: Secondary address line., example: null }
-                    province:      { type: string, description: State/Province. }
-                    first_name: { type: string, example: "John" }
-                    last_name:  { type: string, example: "Carry" }
-                    country_code: { type: string, example: "FR" }
-                    province_code: { type: string}
-                    
+                    zip:
+                      type: string
+                      description: Postal/ZIP code.
+                      example: "60089"
+                    city:
+                      type: string
+                      example: "Buffalo Grove"
+                    phone:
+                      type: string
+                    company:
+                      type: string
+                    country:
+                      type: string
+                      example: "France"
+                    address1:
+                      type: string
+                      description: Primary street line.
+                      example: "1999 Rue Lucie Aubrac"
+                    address2:
+                      type: string
+                      nullable: true
+                      description: Secondary address line.
+                      example: null
+                    province:
+                      type: string
+                      description: State/Province
+                    first_name:
+                      type: string
+                      example: "John"
+                    last_name:
+                      type: string
+                      example: "Carry"
+                    country_code:
+                      type: string
+                      example: "FR"
+                    province_code:
+                      type: string
+
                 line_items:
                   type: array
                   description: List of items to fulfill.
@@ -148,8 +162,13 @@ paths:
                     type: object
                     required: [quantity, variant_sku]
                     properties:
-                      quantity:    { type: integer, example: 1 }
-                      variant_sku: { type: string, description: Partner SKU to fulfill., example: "2342" }
+                      quantity:
+                        type: integer
+                        example: 1
+                      variant_sku:
+                        type: string
+                        description: Partner SKU to fulfill.
+                        example: "2342"
                       print_areas:
                         type: array
                         description: Artwork per print area.
@@ -158,63 +177,81 @@ paths:
                           type: object
                           required: [key, url]
                           properties:
-                            key: { type: string, description: Print area key., example: "front" }
-                            url: { type: string, format: uri, description: Public URL to the artwork., example: "https://cdn.teeinblue.com/designs/467f0119-2e8d-4bc8-be90-fd80cbb49f08/467f0119-2e8d-4bc8-be90-fd80cbb49f08-272489.png" }
-            example:
-              reference_order_id: "#1001"
-              test_order: false
-              shipment_notification_url: https://api.teeinblue.com/api/webhook/print-provider?order-token=7d1e0f01ff56119101046f4f27a88412
-              shipping_address:
-                zip: "60089"
-                city: "Buffalo Grove"
-                phone: "0123456789"
-                company: null
-                country: "France"
-                address1: "999 Rue Lucie Aubrac"
-                address2: null
-                province: null
-                last_name: "John"
-                first_name: "Carry"
-                country_code: "FR"
-                province_code: null
-              line_items:
-                - quantity: 1
-                  print_areas:
-                    - { key: "front",  url: "https://front-design.png" }
-                    - { key: "back",   url: "https://back-design.png" }
-                  variant_sku: "2342"
-                - quantity: 1
-                  print_areas:
-                    - { key: "default", url: "https://default-design.png" }
-                  variant_sku: "2342"
+                            key:
+                              type: string
+                              description: Print area key.
+                              example: "front"
+                            url:
+                              type: string
+                              format: uri
+                              description: Public URL to the artwork.
+                              example: "https://cdn.teeinblue.com/designs/467f0119-2e8d-4bc8-be90-fd80cbb49f08/467f0119-2e8d-4bc8-be90-fd80cbb49f08-272489.png"
       responses:
-        '201':
+        "201":
           description: Order created
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  id:           { type: string, example: "ord_123456" }
-                  status:       { type: string, example: "created" }
-                  reference_order_id: { type: string, example: "#1001" }
-        '400': { $ref: '#/components/responses/BadRequest' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '422': { description: Unprocessable Entity (validation error) }
-      
+                  id:
+                    type: string
+                    example: "ord_123456"
+                  status:
+                    type: string
+                    example: "created"
+                  reference_order_id:
+                    type: string
+                    example: "#1001"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          description: Unprocessable Entity (validation error)
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: <token>   # optional, adjust as needed
+      bearerFormat: <token> # optional, adjust as needed
+
+  parameters:
+    id:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+      description: Resource identifier.
+    page:
+      in: query
+      name: page
+      schema:
+        type: integer
+        description: Page number for pagination.
+        default: 1
+    per_page:
+      in: query
+      name: per_page
+      schema:
+        type: integer
+        default: 50
+    search:
+      in: query
+      name: search
+      schema:
+        type: string
+      description: String to search for.
 
   responses:
     BadRequest:
       description: Bad Request
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
           example:
             error:
               code: invalid_parameter
@@ -223,7 +260,8 @@ components:
       description: Unauthorized
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
           example:
             error:
               code: unauthorized
@@ -232,7 +270,8 @@ components:
       description: Not Found
       content:
         application/json:
-          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
           example:
             error:
               code: not_found
@@ -242,16 +281,52 @@ components:
     Meta:
       type: object
       properties:
-        page:     { type: integer }
-        per_page: { type: integer }
-        total:    { type: integer }
+        page:
+          type: integer
+          description: Current page number.
+          example: 1
+        per_page:
+          type: integer
+          description: Number of items per page.
+          example: 50
+        total:
+          type: integer
+          description: Total number of items.
+          example: 1234
       required: [page, per_page, total]
 
     Mockup:
       type: object
       properties:
-        url:  { type: string, format: uri }
+        name:
+          type: string
+          description: Mockup name
+          example: original
+        url:
+          type: string
+          description: Mockup image URL. This should be a high-resolution image that can be used for generating design previews in the design tool.
+          example: "https://cdn.teeinblue.com/mockups/467f0119-2e8d-4bc8-be90-fd80cbb49f08-original.jpg"
+          format: uri
+        mockup_layers:
+          type: array
+          description: Layers available for this mockup. A layer can be either a print area or an image.
+          items:
+            $ref: "#/components/schemas/MockupLayer"
+
       required: [url]
+
+    Point:
+      type: object
+      properties:
+        x:
+          type: integer
+          description: X coordinate of the point
+          example: 100
+        y:
+          type: integer
+          description: Y coordinate of the point
+          example: 200
+      required: [x, y]
 
     PrintArea:
       type: object
@@ -259,54 +334,206 @@ components:
         name:
           type: string
           description: The name of the print area
-          example: front, back, sleeve, hood...
-        width:  { type: integer }
-        height: { type: integer }
+          example: front
+        display_name:
+          type: string
+          description: Human-friendly name for the print area
+          example: Front
+        width:
+          type: integer
+          description: Width of the print area (in pixels)
+          example: 4050
+        height:
+          type: integer
+          description: Height of the print area (in pixels)
+          example: 3000
         dpi:
           type: integer
+          description: DPI (dots per inch) of the print area.
           example: 300
       required: [name, width, height]
 
     Variant:
       type: object
       properties:
-        variant_sku: { type: string }
-        size:        { type: string }
-        color:       { type: string }
-        color_hex:   { type: string }
-        base_cost:   { type: number }
+        variant_sku:
+          type: string
+          description: Partner's unique identifier for this variant. This is required when submitting orders to specify which variant to fulfill.
+          example: "2342"
+        size:
+          type: string
+          description: Size of the variant (e.g. S, M, L, XL). The design tool uses this information to auto-enable size options and connect the correct variants to the correct print areas.
+          example: M
+        color:
+          type: string
+          description: Color of the variant (e.g. Black, White, Red).
+          example: Black
+        color_hex:
+          type: string
+          description: Hex code for the color of the variant.
+          example: "#000000"
+        base_cost:
+          type: number
+          description: Base cost of the variant.
+          example: 19.99
         availability:
           type: string
+          description: Availability status of the variant. The design tool uses this information to determine whether to show or hide the variant as an option in the design tool.
           enum: [in_stock, out_of_stock]
-        weight:      { type: number, nullable: true }
+          example: in_stock
+        weight:
+          type: number
+          description: Weight of the variant.
+          nullable: true
+          example: 200
+        printareas_info:
+          type: array
+          description: Printareas connected to this variant. Teeinblue uses this information to auto-enable `Custom variant's printarea` and connect the printareas to the correct variants.
+          items:
+            $ref: "#/components/schemas/PrintArea"
       required: [variant_sku, size, color, base_cost, availability]
 
     CatalogListItem:
       type: object
       properties:
-        id:           { type: integer }
-        name:         { type: string }
+        id:
+          type: integer
+          description: Catalog ID. This is required when retrieving catalog details or submitting orders.
+          example: 7
+        name:
+          type: string
+          description: Name of the catalog.
+          example: "Sublimated Sherpa Blanket"
         mockups:
           type: array
-          items: { $ref: '#/components/schemas/Mockup' }
+          description: List of mockups for this catalog.
+          items:
+            $ref: "#/components/schemas/Mockup"
       required: [id, name]
 
     Catalog:
       type: object
       properties:
-        id:           { type: integer }
-        name:         { type: string }
-        description:  { type: string }
+        id:
+          type: integer
+          description: Catalog ID. This is required when retrieving catalog details or submitting orders.
+          example: 7
+        name:
+          type: string
+          description: Name of the catalog.
+          example: "Sublimated Sherpa Blanket"
+        description:
+          type: string
+          description: Description of the catalog.
+          example: "A high-quality sublimated sherpa blanket"
         mockups:
           type: array
-          items: { $ref: '#/components/schemas/Mockup' }
+          items:
+            $ref: "#/components/schemas/Mockup"
         print_areas:
           type: array
-          items: { $ref: '#/components/schemas/PrintArea' }
+          items:
+            $ref: "#/components/schemas/PrintArea"
         variants:
           type: array
-          items: { $ref: '#/components/schemas/Variant' }
+          description: List of variants for this catalog. Each variant represents a specific combination of size and color (e.g. "Size S / Color Black").
+          items:
+            $ref: "#/components/schemas/Variant"
       required: [id, name, mockups, print_areas, variants]
+
+    MockupLayer:
+      type: object
+      properties:
+        width:
+          type: integer
+          description: Width of the mockup layer (in pixels). Required if mask is enabled (find out more at [Mockup of Product Base](https://support.teeinblue.com/en/article/mockup-of-product-base-1h4qyj1/)).
+          example: 4050
+        height:
+          type: integer
+          description: Height of the mockup layer (in pixels). Required if mask is enabled (find out more at [Mockup of Product Base](https://support.teeinblue.com/en/article/mockup-of-product-base-1h4qyj1/)).
+          example: 4650
+        top:
+          type: integer
+          description: Distance from the top edge of the mockup to the top edge of the layer (in pixels)
+          example: 1000
+        left:
+          type: integer
+          description: Distance from the left edge of the mockup to the left edge of the layer (in pixels)
+          example: 800
+        url:
+          type: string
+          format: uri
+          description: URL for this layer on this mockup. Only applicable for image layers. The design tool uses this image to show the layer on the mockup.
+          example: "https://cdn.teeinblue.com/designs/467f0119-2e8d-4bc8-be90-fd80cbb49f08/467f0119-2e8d-4bc8-be90-fd80cbb49f08-front-mask.png"
+        mask:
+          type: object
+          description: Mask for this layer on this mockup, used when you want to show only some parts of a printarea. Only applicable for print area layers. The design tool uses this mask to show the layer in the correct shape and position on the mockup. Find out more at [Mockup of Product Base](https://support.teeinblue.com/en/article/mockup-of-product-base-1h4qyj1/).
+          properties:
+            url:
+              type: string
+              format: uri
+              description: Mask image URL for this print area on this mockup. The design tool uses this mask to show the artwork in the correct shape and position on the mockup.
+              example: "https://cdn.teeinblue.com/designs/467f0119-2e8d-4bc8-be90-fd80cbb49f08/467f0119-2e8d-4bc8-be90-fd80cbb49f08-front-mask.png"
+            width:
+              type: integer
+              description: Width of the masked print area on this mockup (in pixels).
+              example: 4050
+            height:
+              type: integer
+              description: Height of the masked print area on this mockup (in pixels).
+              example: 4650
+            top:
+              type: integer
+              description: Distance from the top edge of the mockup to the top edge of the masked print area (in pixels).
+              example: 1000
+            left:
+              type: integer
+              description: Distance from the left edge of the mockup to the left edge of the masked print area (in pixels).
+              example: 800
+        perspective:
+          type: object
+          description: Perspective transformation for this layer on this mockup, used when you want to show only some parts of a printarea. Only applicable for print area layers. The design tool uses this information to transform the artwork to fit the perspective of the mockup. Find out more at [Mockup of Product Base](https://support.teeinblue.com/en/article/mockup-of-product-base-1h4qyj1/).
+          properties:
+            top_left:
+              $ref: '#/components/schemas/Point'
+              description: Top-left corner of the print area on this mockup.
+              example: 
+                x: 100
+                y: 200
+            top_right:
+              $ref: '#/components/schemas/Point'
+              description: Top-right corner of the print area on this mockup.
+              example: 
+                x: 500
+                y: 200
+            bottom_left:
+              $ref: '#/components/schemas/Point'
+              description: Bottom-left corner of the print area on this mockup.
+              example: 
+                x: 100
+                y: 700
+            bottom_right:
+              $ref: '#/components/schemas/Point'
+              description: Bottom-right corner of the print area on this mockup.
+              example: 
+                x: 500
+                y: 700
+        printarea_info:
+          type: object
+          description: Printarea information for this layer on this mockup. Only applicable for print area layers.
+          properties:
+            name:
+              type: string
+              description: Name of the print area.
+              example: front
+            width:
+              type: integer
+              description: Width of the print area (in pixels).
+              example: 4050
+            height:
+              type: integer
+              description: Height of the print area (in pixels).
+              example: 4650
 
     ErrorEnvelope:
       type: object
@@ -314,9 +541,14 @@ components:
         error:
           type: object
           properties:
-            code:       { type: string }
-            message:    { type: string }
-            details:    { type: object, additionalProperties: true }
+            code:
+              type: string
+              description: A short error code for programmatic handling of errors.
+            message:
+              type: string
+              description: A human-readable message describing the error.
+            details:
+              type: object
+              additionalProperties: true
           required: [code, message]
       required: [error]
-
