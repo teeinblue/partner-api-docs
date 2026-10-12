@@ -297,19 +297,75 @@ components:
 
     Mockup:
       type: object
+      description: >-
+        A mockup for this catalog, composed of ordered `mockup_layers` over a declared
+        `width` x `height` coordinate space.
+
+
+        Mockups cannot be tied to particular variants through this API. Sending one
+        mockup per colour is fine, but Teeinblue will not automatically show a given
+        mockup only for its matching variant — a seller assigns mockups to variants
+        themselves in the campaign editor ("Assigned variants"). If you want the mockup
+        to follow the variant colour instead, see `Variant.color_hex`.
       properties:
         name:
           type: string
-          description: Mockup name
+          description: >-
+            Mockup name. Worth making this descriptive (e.g. the colour or angle it
+            shows), since it is what a seller sees when assigning mockups to variants.
           example: original
         url:
           type: string
-          description: Mockup image URL. This should be a high-resolution image that can be used for generating design previews in the design tool.
+          description: >-
+            Mockup image URL. This should be a high-resolution image that can be used for
+            generating design previews in the design tool.
+
+
+            Note what this is used for when `mockup_layers` is present: the image is NOT
+            drawn as the mockup's background. It is used as the thumbnail in the
+            product-browsing list, and to recognise a mockup it has already imported.
+            The visible artwork is composed from `mockup_layers` only, so send your
+            background photo as the first entry of `mockup_layers` (see the ordering note
+            there) rather than relying on this field to appear behind the print area.
+
+
+            Accepted formats: PNG, JPG or WebP. Teeinblue downloads the image and re-hosts
+            it, downscaling the preview copy to 960px on the longest side; the dimensions
+            you declare in `width`/`height` are unaffected by that (see `width`).
           example: "https://cdn.teeinblue.com/mockups/467f0119-2e8d-4bc8-be90-fd80cbb49f08-original.jpg"
           format: uri
+        width:
+          type: integer
+          description: >-
+            Width of the mockup image in pixels. REQUIRED whenever `mockup_layers` is
+            present.
+
+
+            This is the coordinate space for the whole mockup: every `top`, `left`,
+            `width` and `height` on a layer, every `mask` offset, and every `perspective`
+            point is interpreted relative to this `width` x `height` — NOT to the pixel
+            dimensions of the file at `url`, and not to any resized copy. Send the
+            geometry in the same space you declare here and it will render correctly at
+            any display size.
+          example: 1000
+        height:
+          type: integer
+          description: >-
+            Height of the mockup image in pixels. REQUIRED whenever `mockup_layers` is
+            present. See `width` for how this defines the coordinate space.
+          example: 1000
         mockup_layers:
           type: array
-          description: Layers available for this mockup. A layer can be either a print area or an image.
+          description: >-
+            Layers available for this mockup. A layer can be either a print area or an
+            image.
+
+
+            ORDER MATTERS: the array is ordered back to front. The first element is the
+            bottom-most layer and the last element is drawn on top. So a background photo
+            belongs first, and an image layer that must cover the artwork (a phone case's
+            camera, a model's arm in front of a shirt) belongs after the print-area layer
+            it should cover.
           items:
             $ref: "#/components/schemas/MockupLayer"
 
@@ -370,7 +426,15 @@ components:
           example: Black
         color_hex:
           type: string
-          description: Hex code for the color of the variant.
+          description: >-
+            Hex code for the color of the variant.
+
+
+            Also used by the optional "Background by variant color" feature, where the
+            mockup's transparent background is filled with the selected variant's colour.
+            That feature is switched on per mockup by the seller in Teeinblue; it cannot
+            be enabled through this API, but it reads this field when it is on — so send
+            an accurate `color_hex` even though you cannot turn the feature on yourself.
           example: "#000000"
         base_cost:
           type: number
@@ -383,7 +447,12 @@ components:
           example: in_stock
         weight:
           type: number
-          description: Weight of the variant.
+          description: >-
+            Weight of the variant, in GRAMS. Send a plain number with no unit suffix.
+
+
+            Teeinblue passes this straight through when publishing products to a seller's
+            store, interpreting it as grams by default.
           nullable: true
           example: 200
         printareas_info:
@@ -404,6 +473,14 @@ components:
           type: string
           description: Name of the catalog.
           example: "Sublimated Sherpa Blanket"
+        base_cost:
+          type: number
+          description: >-
+            Starting base cost for this catalog, shown as the price in the
+            product-browsing list before a seller opens the catalog. Without it the list
+            shows no price. Per-variant pricing still comes from `Variant.base_cost` in
+            the catalog detail response.
+          example: 19.99
         mockups:
           type: array
           description: List of mockups for this catalog.
@@ -443,7 +520,23 @@ components:
 
     MockupLayer:
       type: object
+      description: >-
+        One layer of a mockup, either an image layer (send `url`) or a print-area layer
+        (send `printarea_info`, optionally with `mask` or `perspective`).
+
+
+        All geometry on this object — `top`, `left`, `width`, `height`, the `mask`
+        offsets and the `perspective` points — is expressed in the mockup's own
+        coordinate space, i.e. relative to `Mockup.width` x `Mockup.height`.
+
+
+        Layer order within `mockup_layers` determines stacking: first element is at the
+        back, last element is at the front.
       properties:
+        name:
+          type: string
+          description: Optional label for this layer, shown to sellers in the mockup editor.
+          example: Background
         width:
           type: integer
           description: Width of the mockup layer (in pixels). Required if mask is enabled (find out more at [Mockup of Product Base](https://support.teeinblue.com/en/article/mockup-of-product-base-1h4qyj1/)).
@@ -463,7 +556,20 @@ components:
         url:
           type: string
           format: uri
-          description: URL for this layer on this mockup. Only applicable for image layers. The design tool uses this image to show the layer on the mockup.
+          description: >-
+            URL for this layer on this mockup. Only applicable for image layers. The
+            design tool uses this image to show the layer on the mockup.
+
+
+            Accepted formats: PNG, JPG or WebP. Use PNG (or WebP) with transparency for
+            any layer that has to let the artwork or the variant colour show through.
+            Teeinblue downloads this image and re-hosts it on its own CDN, so the URL
+            does not need to stay reachable forever — unlike `mask.url`, see below.
+
+
+            There is no opacity or blend-mode field: image layers always render fully
+            opaque, in the order given by `mockup_layers`. Bake any transparency into
+            the image itself.
           example: "https://cdn.teeinblue.com/designs/467f0119-2e8d-4bc8-be90-fd80cbb49f08/467f0119-2e8d-4bc8-be90-fd80cbb49f08-front-mask.png"
         mask:
           type: object
@@ -472,23 +578,51 @@ components:
             url:
               type: string
               format: uri
-              description: Mask image URL for this print area on this mockup. The design tool uses this mask to show the artwork in the correct shape and position on the mockup.
+              description: >-
+                Mask image URL for this print area on this mockup. The design tool uses
+                this mask to show the artwork in the correct shape and position on the
+                mockup.
+
+
+                MUST have a real alpha channel — a PNG (or WebP) with a transparent
+                background. The mask is applied through the image's alpha, not its
+                brightness, so a black-and-white image with no transparency will not mask
+                anything.
+
+
+                Unlike every other image in this payload, the mask is NOT downloaded or
+                re-hosted by Teeinblue: it is loaded directly from this URL each time a
+                mockup is rendered in a storefront or the design tool. The URL has to
+                stay publicly reachable for as long as the catalog is in use, and should
+                be served with permissive CORS and sensible cache headers.
               example: "https://cdn.teeinblue.com/designs/467f0119-2e8d-4bc8-be90-fd80cbb49f08/467f0119-2e8d-4bc8-be90-fd80cbb49f08-front-mask.png"
             width:
               type: integer
-              description: Width of the masked print area on this mockup (in pixels).
+              description: >-
+                Width of the masked print area on this mockup (in pixels), in the
+                mockup's coordinate space.
               example: 4050
             height:
               type: integer
-              description: Height of the masked print area on this mockup (in pixels).
+              description: >-
+                Height of the masked print area on this mockup (in pixels), in the
+                mockup's coordinate space.
               example: 4650
             top:
               type: integer
-              description: Distance from the top edge of the mockup to the top edge of the masked print area (in pixels).
+              description: >-
+                Distance from the top edge of the MOCKUP to the top edge of the masked
+                print area (in pixels) — measured from the mockup's origin, not from the
+                print-area layer's own top edge. A mask that covers the whole mockup
+                (top 0, left 0, full width/height) is valid; it does not have to be
+                cropped to the print area.
               example: 1000
             left:
               type: integer
-              description: Distance from the left edge of the mockup to the left edge of the masked print area (in pixels).
+              description: >-
+                Distance from the left edge of the MOCKUP to the left edge of the masked
+                print area (in pixels) — measured from the mockup's origin, not from the
+                print-area layer's own left edge.
               example: 800
         perspective:
           type: object
