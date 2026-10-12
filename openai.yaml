@@ -243,7 +243,17 @@ components:
       name: search
       schema:
         type: string
-      description: String to search for.
+      description: >-
+        String to search for. Sent when a seller searches the catalog list; omitted when
+        they are just browsing.
+
+
+        When it is present, filter the catalogs yourself and return only the matching
+        page, with `meta.total` set to the number of MATCHES (not the size of the whole
+        catalog) — Teeinblue pages through the results using that total and shows them
+        as-is. When it is absent, Teeinblue reads the whole catalog and searches locally,
+        so you do not need to implement search to be usable; results are simply filtered
+        on the Teeinblue side instead.
 
   responses:
     BadRequest:
